@@ -3,7 +3,6 @@ package org.delcom.app.services;
 import org.delcom.app.entities.CashFlow;
 import org.delcom.app.repositories.CashFlowRepository;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,16 +12,19 @@ public class CashFlowService {
 
     private final CashFlowRepository cashFlowRepository;
 
+    // Constructor Injection (Wajib untuk lulus Test TA)
     public CashFlowService(CashFlowRepository cashFlowRepository) {
         this.cashFlowRepository = cashFlowRepository;
     }
 
+    // 1. CREATE
     public CashFlow createCashFlow(String type, String source, String label, Integer amount, String description) {
-        CashFlow flow = new CashFlow(type, source, label, amount, description);
-        flow.onCreate();
-        return cashFlowRepository.save(flow);
+        CashFlow newFlow = new CashFlow(type, source, label, amount, description);
+        newFlow.onCreate();
+        return cashFlowRepository.save(newFlow);
     }
 
+    // 2. READ ALL / SEARCH
     public List<CashFlow> getAllCashFlows(String keyword) {
         if (keyword != null && !keyword.trim().isEmpty()) {
             return cashFlowRepository.findByKeyword(keyword.trim());
@@ -30,35 +32,41 @@ public class CashFlowService {
         return cashFlowRepository.findAll();
     }
 
+    // 3. READ BY ID
     public CashFlow getCashFlowById(UUID id) {
         return cashFlowRepository.findById(id).orElse(null);
     }
 
+    // 4. GET LABELS
     public List<String> getCashFlowLabels() {
         return cashFlowRepository.findDistinctLabels();
     }
 
+    // 5. UPDATE
     public CashFlow updateCashFlow(UUID id, String type, String source, String label, Integer amount, String description) {
-        Optional<CashFlow> existed = cashFlowRepository.findById(id);
+        Optional<CashFlow> existingFlowOpt = cashFlowRepository.findById(id);
 
-        if (existed.isEmpty()) return null;
-
-        CashFlow flow = existed.get();
-        flow.setType(type);
-        flow.setSource(source);
-        flow.setLabel(label);
-        flow.setAmount(amount);
-        flow.setDescription(description);
-        flow.onUpdate();
-
-        return cashFlowRepository.save(flow);
+        if (existingFlowOpt.isPresent()) {
+            CashFlow existingFlow = existingFlowOpt.get();
+            
+            existingFlow.setType(type);
+            existingFlow.setSource(source);
+            existingFlow.setLabel(label);
+            existingFlow.setAmount(amount);
+            existingFlow.setDescription(description);
+            
+            existingFlow.onUpdate();
+            return cashFlowRepository.save(existingFlow);
+        }
+        return null;
     }
 
+    // 6. DELETE
     public boolean deleteCashFlow(UUID id) {
-        if (!cashFlowRepository.existsById(id)) {
-            return false;
+        if (cashFlowRepository.existsById(id)) {
+            cashFlowRepository.deleteById(id);
+            return true;
         }
-        cashFlowRepository.deleteById(id);
-        return true;
+        return false;
     }
 }
